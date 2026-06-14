@@ -3,23 +3,22 @@ import { useState, useEffect, useRef } from "react";
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyktd16KfQj_octrct618VU5aW45T9mNikgMV2wibfWbl4FAvZgh5TO-dgUG_fgjg7o/exec";
 
 // ─── Week helpers ─────────────────────────────────────────────────────────────
-function getWeekKey(dateStr) {
+function getMonday(dateStr) {
   const d = new Date(dateStr + "T12:00:00");
-  const startOfYear = new Date(d.getFullYear(), 0, 1);
-  const startOfWeek = new Date(startOfYear);
-  startOfWeek.setDate(startOfYear.getDate() - startOfYear.getDay() + 1);
-  if (startOfWeek > d) startOfWeek.setDate(startOfWeek.getDate() - 7);
-  const week = Math.floor((d - startOfWeek) / (7 * 86400000)) + 1;
-  return `${d.getFullYear()}-W${String(week).padStart(2, "0")}`;
+  const day = d.getDay(); // 0=Sun, 1=Mon...
+  const diff = (day === 0 ? -6 : 1 - day);
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function getWeekKey(dateStr) {
+  const mon = getMonday(dateStr);
+  return mon.toISOString().split("T")[0];
 }
 
 function getWeekLabel(weekKey) {
-  const [year, wStr] = weekKey.split("-W");
-  const week = parseInt(wStr);
-  const jan1 = new Date(parseInt(year), 0, 1);
-  const startOfWeek = new Date(jan1);
-  startOfWeek.setDate(jan1.getDate() - jan1.getDay() + 1 + (week - 1) * 7);
-  return startOfWeek.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const d = new Date(weekKey + "T12:00:00");
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
 function getCurrentWeekKey() {
@@ -36,6 +35,7 @@ function getLast20Weeks() {
   }
   return weeks;
 }
+
 
 const today = new Date().toISOString().split("T")[0];
 

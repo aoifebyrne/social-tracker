@@ -3,9 +3,19 @@ import { useState, useEffect, useRef } from "react";
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyktd16KfQj_octrct618VU5aW45T9mNikgMV2wibfWbl4FAvZgh5TO-dgUG_fgjg7o/exec";
 
 // ─── Week helpers ─────────────────────────────────────────────────────────────
+function toDateStr(val) {
+  if (!val) return null;
+  if (typeof val === "string" && /^\d{4}-\d{2}-\d{2}/.test(val)) return val.slice(0, 10);
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString().split("T")[0];
+}
+
 function getMonday(dateStr) {
-  const d = new Date(dateStr + "T12:00:00");
-  const day = d.getDay(); // 0=Sun, 1=Mon...
+  const safe = toDateStr(dateStr);
+  if (!safe) return new Date("invalid");
+  const d = new Date(safe + "T12:00:00");
+  const day = d.getDay();
   const diff = (day === 0 ? -6 : 1 - day);
   d.setDate(d.getDate() + diff);
   return d;
@@ -13,6 +23,7 @@ function getMonday(dateStr) {
 
 function getWeekKey(dateStr) {
   const mon = getMonday(dateStr);
+  if (isNaN(mon.getTime())) return "invalid";
   return mon.toISOString().split("T")[0];
 }
 
@@ -35,7 +46,6 @@ function getLast20Weeks() {
   }
   return weeks;
 }
-
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -63,29 +73,188 @@ const btn = (active, color = "#4a7c59") => ({
 // ─── Options ──────────────────────────────────────────────────────────────────
 const EVENT_CATEGORIES = ["Sports", "Culture", "Arts", "Social", "Professional", "Spiritual", "Other"];
 const AGE_BRACKETS = ["Under 25", "25–34", "35–44", "45–54", "55+", "Unknown"];
-const GENDERS = ["Man", "Woman", "Non-binary", "Other", "Unknown"];
-const ORIENTATIONS = ["Straight", "Gay/Lesbian", "Bisexual", "Queer", "Other", "Unknown"];
+const GENDERS = ["Man", "Woman", "Non-binary", "Unknown"];
+const ORIENTATIONS = ["Straight", "Gay/Lesbian", "Queer", "Unknown"];
 const REL_STATUSES = ["Single", "In a relationship", "Married", "It's complicated", "Unknown"];
+
+// All nations with emoji flags — priority ones first
 const NATIONALITIES = [
-  "London Irish", "Irish", "British", "American", "Australian", "Canadian", "French", "German",
-  "Italian", "Spanish", "Portuguese", "Dutch", "Belgian", "Swedish", "Norwegian", "Danish",
-  "Finnish", "Polish", "Czech", "Hungarian", "Romanian", "Greek", "Turkish", "Russian",
-  "Ukrainian", "Israeli", "Lebanese", "Iranian", "Indian", "Pakistani", "Bangladeshi",
-  "Sri Lankan", "Nepali", "Chinese", "Japanese", "Korean", "Filipino", "Vietnamese",
-  "Thai", "Indonesian", "Malaysian", "Singaporean", "Nigerian", "Ghanaian", "Kenyan",
-  "South African", "Ethiopian", "Somali", "Moroccan", "Egyptian", "Algerian",
-  "Brazilian", "Colombian", "Mexican", "Argentinian", "Chilean", "Venezuelan",
-  "New Zealander", "Other", "Unknown"
-].sort((a, b) => {
-  const priority = ["London Irish", "Irish", "British"];
-  const ai = priority.indexOf(a), bi = priority.indexOf(b);
-  if (ai !== -1 && bi !== -1) return ai - bi;
-  if (ai !== -1) return -1;
-  if (bi !== -1) return 1;
-  if (a === "Other" || a === "Unknown") return 1;
-  if (b === "Other" || b === "Unknown") return -1;
-  return a.localeCompare(b);
-});
+  { name: "London Irish", flag: "🍀" },
+  { name: "Irish", flag: "🇮🇪" },
+  { name: "English", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+  { name: "Scottish", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
+  { name: "Welsh", flag: "🏴󠁧󠁢󠁷󠁬󠁳󠁿" },
+  { name: "British", flag: "🇬🇧" },
+  { name: "Afghan", flag: "🇦🇫" },
+  { name: "Albanian", flag: "🇦🇱" },
+  { name: "Algerian", flag: "🇩🇿" },
+  { name: "Andorran", flag: "🇦🇩" },
+  { name: "Angolan", flag: "🇦🇴" },
+  { name: "Argentine", flag: "🇦🇷" },
+  { name: "Armenian", flag: "🇦🇲" },
+  { name: "Australian", flag: "🇦🇺" },
+  { name: "Austrian", flag: "🇦🇹" },
+  { name: "Azerbaijani", flag: "🇦🇿" },
+  { name: "Bahamian", flag: "🇧🇸" },
+  { name: "Bahraini", flag: "🇧🇭" },
+  { name: "Bangladeshi", flag: "🇧🇩" },
+  { name: "Belarusian", flag: "🇧🇾" },
+  { name: "Belgian", flag: "🇧🇪" },
+  { name: "Belizean", flag: "🇧🇿" },
+  { name: "Beninese", flag: "🇧🇯" },
+  { name: "Bhutanese", flag: "🇧🇹" },
+  { name: "Bolivian", flag: "🇧🇴" },
+  { name: "Bosnian", flag: "🇧🇦" },
+  { name: "Botswanan", flag: "🇧🇼" },
+  { name: "Brazilian", flag: "🇧🇷" },
+  { name: "Bruneian", flag: "🇧🇳" },
+  { name: "Bulgarian", flag: "🇧🇬" },
+  { name: "Burkinabe", flag: "🇧🇫" },
+  { name: "Burundian", flag: "🇧🇮" },
+  { name: "Cambodian", flag: "🇰🇭" },
+  { name: "Cameroonian", flag: "🇨🇲" },
+  { name: "Canadian", flag: "🇨🇦" },
+  { name: "Cape Verdean", flag: "🇨🇻" },
+  { name: "Central African", flag: "🇨🇫" },
+  { name: "Chadian", flag: "🇹🇩" },
+  { name: "Chilean", flag: "🇨🇱" },
+  { name: "Chinese", flag: "🇨🇳" },
+  { name: "Colombian", flag: "🇨🇴" },
+  { name: "Comorian", flag: "🇰🇲" },
+  { name: "Congolese", flag: "🇨🇬" },
+  { name: "Costa Rican", flag: "🇨🇷" },
+  { name: "Croatian", flag: "🇭🇷" },
+  { name: "Cuban", flag: "🇨🇺" },
+  { name: "Cypriot", flag: "🇨🇾" },
+  { name: "Czech", flag: "🇨🇿" },
+  { name: "Danish", flag: "🇩🇰" },
+  { name: "Djiboutian", flag: "🇩🇯" },
+  { name: "Dominican", flag: "🇩🇴" },
+  { name: "Dutch", flag: "🇳🇱" },
+  { name: "Ecuadorian", flag: "🇪🇨" },
+  { name: "Egyptian", flag: "🇪🇬" },
+  { name: "Emirati", flag: "🇦🇪" },
+  { name: "Equatorial Guinean", flag: "🇬🇶" },
+  { name: "Eritrean", flag: "🇪🇷" },
+  { name: "Estonian", flag: "🇪🇪" },
+  { name: "Eswatini", flag: "🇸🇿" },
+  { name: "Ethiopian", flag: "🇪🇹" },
+  { name: "Fijian", flag: "🇫🇯" },
+  { name: "Finnish", flag: "🇫🇮" },
+  { name: "French", flag: "🇫🇷" },
+  { name: "Gabonese", flag: "🇬🇦" },
+  { name: "Gambian", flag: "🇬🇲" },
+  { name: "Georgian", flag: "🇬🇪" },
+  { name: "German", flag: "🇩🇪" },
+  { name: "Ghanaian", flag: "🇬🇭" },
+  { name: "Greek", flag: "🇬🇷" },
+  { name: "Grenadian", flag: "🇬🇩" },
+  { name: "Guatemalan", flag: "🇬🇹" },
+  { name: "Guinean", flag: "🇬🇳" },
+  { name: "Guyanese", flag: "🇬🇾" },
+  { name: "Haitian", flag: "🇭🇹" },
+  { name: "Honduran", flag: "🇭🇳" },
+  { name: "Hungarian", flag: "🇭🇺" },
+  { name: "Icelandic", flag: "🇮🇸" },
+  { name: "Indian", flag: "🇮🇳" },
+  { name: "Indonesian", flag: "🇮🇩" },
+  { name: "Iranian", flag: "🇮🇷" },
+  { name: "Iraqi", flag: "🇮🇶" },
+  { name: "Israeli", flag: "🇮🇱" },
+  { name: "Italian", flag: "🇮🇹" },
+  { name: "Ivorian", flag: "🇨🇮" },
+  { name: "Jamaican", flag: "🇯🇲" },
+  { name: "Japanese", flag: "🇯🇵" },
+  { name: "Jordanian", flag: "🇯🇴" },
+  { name: "Kazakhstani", flag: "🇰🇿" },
+  { name: "Kenyan", flag: "🇰🇪" },
+  { name: "Kuwaiti", flag: "🇰🇼" },
+  { name: "Kyrgyz", flag: "🇰🇬" },
+  { name: "Laotian", flag: "🇱🇦" },
+  { name: "Latvian", flag: "🇱🇻" },
+  { name: "Lebanese", flag: "🇱🇧" },
+  { name: "Liberian", flag: "🇱🇷" },
+  { name: "Libyan", flag: "🇱🇾" },
+  { name: "Lithuanian", flag: "🇱🇹" },
+  { name: "Luxembourgish", flag: "🇱🇺" },
+  { name: "Malagasy", flag: "🇲🇬" },
+  { name: "Malawian", flag: "🇲🇼" },
+  { name: "Malaysian", flag: "🇲🇾" },
+  { name: "Maldivian", flag: "🇲🇻" },
+  { name: "Malian", flag: "🇲🇱" },
+  { name: "Maltese", flag: "🇲🇹" },
+  { name: "Mauritanian", flag: "🇲🇷" },
+  { name: "Mauritian", flag: "🇲🇺" },
+  { name: "Mexican", flag: "🇲🇽" },
+  { name: "Moldovan", flag: "🇲🇩" },
+  { name: "Mongolian", flag: "🇲🇳" },
+  { name: "Montenegrin", flag: "🇲🇪" },
+  { name: "Moroccan", flag: "🇲🇦" },
+  { name: "Mozambican", flag: "🇲🇿" },
+  { name: "Myanmarese", flag: "🇲🇲" },
+  { name: "Namibian", flag: "🇳🇦" },
+  { name: "Nepalese", flag: "🇳🇵" },
+  { name: "New Zealander", flag: "🇳🇿" },
+  { name: "Nicaraguan", flag: "🇳🇮" },
+  { name: "Nigerian", flag: "🇳🇬" },
+  { name: "North Korean", flag: "🇰🇵" },
+  { name: "North Macedonian", flag: "🇲🇰" },
+  { name: "Norwegian", flag: "🇳🇴" },
+  { name: "Omani", flag: "🇴🇲" },
+  { name: "Pakistani", flag: "🇵🇰" },
+  { name: "Palestinian", flag: "🇵🇸" },
+  { name: "Panamanian", flag: "🇵🇦" },
+  { name: "Papua New Guinean", flag: "🇵🇬" },
+  { name: "Paraguayan", flag: "🇵🇾" },
+  { name: "Peruvian", flag: "🇵🇪" },
+  { name: "Filipino", flag: "🇵🇭" },
+  { name: "Polish", flag: "🇵🇱" },
+  { name: "Portuguese", flag: "🇵🇹" },
+  { name: "Qatari", flag: "🇶🇦" },
+  { name: "Romanian", flag: "🇷🇴" },
+  { name: "Russian", flag: "🇷🇺" },
+  { name: "Rwandan", flag: "🇷🇼" },
+  { name: "Saudi", flag: "🇸🇦" },
+  { name: "Senegalese", flag: "🇸🇳" },
+  { name: "Serbian", flag: "🇷🇸" },
+  { name: "Sierra Leonean", flag: "🇸🇱" },
+  { name: "Singaporean", flag: "🇸🇬" },
+  { name: "Slovak", flag: "🇸🇰" },
+  { name: "Slovenian", flag: "🇸🇮" },
+  { name: "Somali", flag: "🇸🇴" },
+  { name: "South African", flag: "🇿🇦" },
+  { name: "South Korean", flag: "🇰🇷" },
+  { name: "South Sudanese", flag: "🇸🇸" },
+  { name: "Spanish", flag: "🇪🇸" },
+  { name: "Sri Lankan", flag: "🇱🇰" },
+  { name: "Sudanese", flag: "🇸🇩" },
+  { name: "Surinamese", flag: "🇸🇷" },
+  { name: "Swedish", flag: "🇸🇪" },
+  { name: "Swiss", flag: "🇨🇭" },
+  { name: "Syrian", flag: "🇸🇾" },
+  { name: "Taiwanese", flag: "🇹🇼" },
+  { name: "Tajik", flag: "🇹🇯" },
+  { name: "Tanzanian", flag: "🇹🇿" },
+  { name: "Thai", flag: "🇹🇭" },
+  { name: "Timorese", flag: "🇹🇱" },
+  { name: "Togolese", flag: "🇹🇬" },
+  { name: "Trinidadian", flag: "🇹🇹" },
+  { name: "Tunisian", flag: "🇹🇳" },
+  { name: "Turkish", flag: "🇹🇷" },
+  { name: "Turkmen", flag: "🇹🇲" },
+  { name: "Ugandan", flag: "🇺🇬" },
+  { name: "Ukrainian", flag: "🇺🇦" },
+  { name: "American", flag: "🇺🇸" },
+  { name: "Uruguayan", flag: "🇺🇾" },
+  { name: "Uzbek", flag: "🇺🇿" },
+  { name: "Venezuelan", flag: "🇻🇪" },
+  { name: "Vietnamese", flag: "🇻🇳" },
+  { name: "Yemeni", flag: "🇾🇪" },
+  { name: "Zambian", flag: "🇿🇲" },
+  { name: "Zimbabwean", flag: "🇿🇼" },
+  { name: "Other", flag: "🌍" },
+  { name: "Unknown", flag: "❓" },
+];
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 async function api(action, data) {
@@ -107,7 +276,7 @@ async function api(action, data) {
 function BarChart({ data, color = "#4a7c59" }) {
   const max = Math.max(...data.map(d => d.value), 1);
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80, marginTop: 8 }}>
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 90, marginTop: 8 }}>
       {data.map((d, i) => (
         <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
           <div style={{ fontSize: 10, color: "#888" }}>{d.value || ""}</div>
@@ -120,7 +289,8 @@ function BarChart({ data, color = "#4a7c59" }) {
 }
 
 function LineChart({ points, color = "#c8b89a" }) {
-  if (!points || points.length < 2) return <div style={{ fontSize: 12, color: "#444", padding: "20px 0" }}>Not enough data yet</div>;
+  if (!points || points.filter(p => p.value > 0).length < 2)
+    return <div style={{ fontSize: 12, color: "#444", padding: "20px 0" }}>Not enough data yet</div>;
   const max = Math.max(...points.map(p => p.value), 1);
   const w = 300, h = 80, pad = 20;
   const xs = points.map((_, i) => pad + (i / (points.length - 1)) * (w - pad * 2));
@@ -142,13 +312,12 @@ function LineChart({ points, color = "#c8b89a" }) {
 }
 
 function MatrixChart({ connections }) {
-  const genders = ["Man", "Woman", "Non-binary", "Other"];
-  const orients = ["Straight", "Gay/Lesbian", "Bisexual", "Queer", "Other"];
+  const genders = ["Man", "Woman", "Non-binary", "Unknown"];
+  const orients = ["Straight", "Gay/Lesbian", "Queer", "Unknown"];
   const counts = {};
   connections.forEach(c => {
-    const g = genders.includes(c.gender) ? c.gender : null;
-    const o = orients.includes(c.orientation) ? c.orientation : null;
-    if (!g || !o) return;
+    const g = genders.includes(c.gender) ? c.gender : "Unknown";
+    const o = orients.includes(c.orientation) ? c.orientation : "Unknown";
     const k = `${g}|${o}`;
     counts[k] = (counts[k] || 0) + 1;
   });
@@ -158,7 +327,7 @@ function MatrixChart({ connections }) {
       <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 10 }}>
         <thead>
           <tr>
-            <td style={{ color: "#555", padding: "2px 4px" }}></td>
+            <td style={{ color: "#555", padding: "2px 4px" }} />
             {orients.map(o => <th key={o} style={{ color: "#888", fontWeight: 400, padding: "2px 4px", textAlign: "center", fontSize: 9 }}>{o.split("/")[0]}</th>)}
           </tr>
         </thead>
@@ -206,18 +375,13 @@ function MapView({ dimEvents, fctOccurrences, connections }) {
 
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-    }
+    if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
     const L = window.L;
     const map = L.map(mapRef.current, { zoomControl: true }).setView([51.505, -0.12], 12);
     mapInstanceRef.current = map;
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
       attribution: "© OpenStreetMap © CARTO", maxZoom: 19
     }).addTo(map);
-
-    // Geocode events with addresses and add heatmap-style circles
     dimEvents.forEach(ev => {
       if (!ev.address) return;
       const occCount = fctOccurrences.filter(o => o.eventId === ev.id).length;
@@ -231,18 +395,12 @@ function MapView({ dimEvents, fctOccurrences, connections }) {
           if (!results[0]) return;
           const lat = parseFloat(results[0].lat);
           const lng = parseFloat(results[0].lon);
-          const radius = 50 + connCount * 20;
-          L.circle([lat, lng], {
-            radius,
-            color: "#4a7c59",
-            fillColor: "#4a7c59",
-            fillOpacity: 0.4,
-            weight: 1
-          }).addTo(map).bindPopup(`<b>${ev.name}</b><br>${occCount} session${occCount !== 1 ? "s" : ""}<br>${connCount} connection${connCount !== 1 ? "s" : ""}`);
+          L.circle([lat, lng], { radius: 60 + connCount * 25, color: "#4a7c59", fillColor: "#4a7c59", fillOpacity: 0.35, weight: 1 })
+            .addTo(map)
+            .bindPopup(`<b>${ev.name}</b><br>${occCount} session${occCount !== 1 ? "s" : ""}<br>${connCount} connection${connCount !== 1 ? "s" : ""}`);
           L.circleMarker([lat, lng], { radius: 4, color: "#c8b89a", fillColor: "#c8b89a", fillOpacity: 1, weight: 1 }).addTo(map);
         }).catch(() => {});
     });
-
     return () => { if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; } };
   }, [mapLoaded, dimEvents, fctOccurrences, connections]);
 
@@ -328,11 +486,13 @@ export default function App() {
   const currentWeek = getCurrentWeekKey();
   const lastWeek = weeks[weeks.length - 2];
 
+  // Find all past weeks with no connections (excluding current)
   const connByWeek = {};
   data.connections.forEach(c => {
     const occ = data.fctOccurrences.find(o => o.id === c.occurrenceId);
     if (!occ) return;
     const wk = getWeekKey(occ.date);
+    if (wk === "invalid") return;
     if (!connByWeek[wk]) connByWeek[wk] = [];
     connByWeek[wk].push({ ...c, occ });
   });
@@ -348,9 +508,9 @@ export default function App() {
   })();
 
   const irishCount = data.connections.filter(c => c.nationality === "Irish" || c.nationality === "London Irish").length;
-
   const getEventName = (eventId) => data.dimEvents.find(e => e.id === eventId)?.name || "Unknown event";
   const getOccLabel = (occ) => `${getEventName(occ.eventId)} · ${occ.date}`;
+  const getNatFlag = (name) => NATIONALITIES.find(n => n.name === name)?.flag || "";
 
   // Chart data
   const relStatusData = REL_STATUSES.map(s => ({
@@ -368,7 +528,7 @@ export default function App() {
   data.connections.forEach(c => {
     if (c.nationality && c.nationality !== "Unknown") natCounts[c.nationality] = (natCounts[c.nationality] || 0) + 1;
   });
-  const topNats = Object.entries(natCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const topNats = Object.entries(natCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
 
   const syncLabel = syncStatus === "saving" ? "Saving…" : syncStatus === "ok" ? "✓ Saved" : syncStatus === "error" ? "⚠ Error" : "";
   const syncColor = syncStatus === "saving" ? "#888" : syncStatus === "ok" ? "#4a7c59" : "#c0392b";
@@ -408,7 +568,7 @@ export default function App() {
           { label: "Sessions", val: data.fctOccurrences.length },
         ].map(s => (
           <div key={s.label} style={{ flex: 1, padding: "12px 0", textAlign: "center", borderRight: "1px solid #1a1a1a" }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: s.label === "Irish" ? "#c8b89a" : "#c8b89a" }}>{s.val}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: "#c8b89a" }}>{s.val}</div>
             <div style={{ fontSize: 9, color: "#666", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 2 }}>{s.label}</div>
           </div>
         ))}
@@ -424,12 +584,14 @@ export default function App() {
               {weeks.map(wk => {
                 const count = connByWeek[wk]?.length || 0;
                 const isCurrent = wk === currentWeek;
-                const isLast = wk === lastWeek;
+                const TRACKER_START = "2026-06-01";
+                const isPast = !isCurrent && wk < currentWeek && wk >= getWeekKey(TRACKER_START);
                 const met = count > 0;
-                const bg = met ? "#4a7c59" : isLast ? "#7c1a1a" : isCurrent ? "#2a2a2a" : "#1c1c1c";
+                const bg = met ? "#4a7c59" : (isPast ? "#7c1a1a" : isCurrent ? "#2a2a2a" : "#1c1c1c");
+                const textColor = met ? "#a8d5b5" : (isPast ? "#e88" : "#444");
                 return (
                   <div key={wk} style={{ background: bg, border: isCurrent ? "2px solid #c8b89a" : "2px solid transparent", borderRadius: 4, padding: "8px 4px", textAlign: "center" }}>
-                    <div style={{ fontSize: 9, color: met ? "#a8d5b5" : isLast ? "#e88" : "#444" }}>{getWeekLabel(wk)}</div>
+                    <div style={{ fontSize: 9, color: textColor }}>{getWeekLabel(wk)}</div>
                     {count > 0 && <div style={{ fontSize: 14, fontWeight: 700, color: "#e8e2d9", marginTop: 2 }}>{count}</div>}
                     {isCurrent && <div style={{ fontSize: 7, color: "#c8b89a", marginTop: 1, letterSpacing: 1 }}>NOW</div>}
                   </div>
@@ -438,25 +600,8 @@ export default function App() {
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 12, fontSize: 10, color: "#555", flexWrap: "wrap" }}>
               <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#4a7c59", borderRadius: 2, marginRight: 4 }} />Met someone</span>
-              <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#7c1a1a", borderRadius: 2, marginRight: 4 }} />Last week (missed)</span>
+              <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#7c1a1a", borderRadius: 2, marginRight: 4 }} />Missed</span>
               <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#2a2a2a", border: "2px solid #c8b89a", borderRadius: 2, marginRight: 4 }} />This week</span>
-            </div>
-
-            <div style={{ marginTop: 24 }}>
-              <div style={secTitle}>This week</div>
-              {(connByWeek[currentWeek] || []).length === 0 ? (
-                <div style={{ background: "#161616", border: "1px dashed #2a2a2a", borderRadius: 6, padding: 20, textAlign: "center" }}>
-                  <div style={{ fontSize: 13, color: "#555" }}>No one logged yet this week</div>
-                  <button onClick={() => setView("log")} style={{ marginTop: 10, background: "none", border: "1px solid #444", color: "#c8b89a", borderRadius: 4, padding: "6px 14px", fontSize: 12, cursor: "pointer", fontFamily: "Georgia, serif" }}>Log someone →</button>
-                </div>
-              ) : (
-                connByWeek[currentWeek].map(c => (
-                  <div key={c.id} style={{ background: "#161616", borderLeft: "3px solid #4a7c59", borderRadius: 4, padding: "10px 14px", marginBottom: 8 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{getEventName(c.occ.eventId)} · {c.occ.date}</div>
-                  </div>
-                ))
-              )}
             </div>
 
             <div style={{ marginTop: 28 }}>
@@ -603,7 +748,7 @@ export default function App() {
             <div style={{ marginBottom: 12 }}>
               <label style={lbl}>Nationality</label>
               <select value={connForm.nationality} onChange={e => setConnForm({ ...connForm, nationality: e.target.value })} style={inp}>
-                {NATIONALITIES.map(o => <option key={o}>{o}</option>)}
+                {NATIONALITIES.map(n => <option key={n.name} value={n.name}>{n.flag} {n.name}</option>)}
               </select>
             </div>
             <div style={{ marginBottom: 12 }}>
@@ -644,8 +789,10 @@ export default function App() {
                     <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #222" }}>
                       {[
                         ["Age", c.ageBracket], ["Gender", c.gender], ["Orientation", c.orientation],
-                        ["Relationship", c.relationshipStatus], ["Nationality", c.nationality], ["Works in tech", c.worksInTech],
-                      ].filter(([, v]) => v && v !== "Unknown").map(([k, v]) => (
+                        ["Relationship", c.relationshipStatus],
+                        ["Nationality", c.nationality ? `${getNatFlag(c.nationality)} ${c.nationality}` : null],
+                        ["Works in tech", c.worksInTech],
+                      ].filter(([, v]) => v && v !== "Unknown" && !v.endsWith("Unknown")).map(([k, v]) => (
                         <div key={k} style={{ fontSize: 12, color: "#888", marginBottom: 3 }}>
                           <span style={{ color: "#555", marginRight: 6 }}>{k}:</span>{v}
                         </div>
@@ -662,26 +809,24 @@ export default function App() {
         {/* STATS */}
         {view === "stats" && (
           <div>
-            {/* Irish counter */}
             <div style={{ background: "#161616", borderLeft: "3px solid #c8b89a", borderRadius: 4, padding: "14px 16px", marginBottom: 20 }}>
               <div style={{ fontSize: 11, letterSpacing: 2, color: "#888", textTransform: "uppercase", marginBottom: 4 }}>Irish connections</div>
               <div style={{ fontSize: 36, fontWeight: 700, color: "#c8b89a" }}>{irishCount}</div>
               <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
-                {data.connections.filter(c => c.nationality === "London Irish").length} London Irish · {data.connections.filter(c => c.nationality === "Irish").length} Irish
+                🍀 {data.connections.filter(c => c.nationality === "London Irish").length} London Irish · 🇮🇪 {data.connections.filter(c => c.nationality === "Irish").length} Irish
               </div>
             </div>
 
-            {/* Nationalities */}
             <div style={{ background: "#161616", borderRadius: 4, padding: "14px 16px", marginBottom: 16 }}>
               <div style={{ ...secTitle, marginBottom: 8 }}>Nationalities met ({Object.keys(natCounts).length})</div>
               {topNats.length === 0
                 ? <div style={{ fontSize: 12, color: "#444" }}>No data yet</div>
                 : topNats.map(([nat, count]) => (
                   <div key={nat} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <div style={{ fontSize: 13, color: "#aaa" }}>{nat}</div>
+                    <div style={{ fontSize: 13, color: "#aaa" }}>{getNatFlag(nat)} {nat}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <div style={{ width: 60, height: 6, background: "#1a1a1a", borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ width: `${(count / (topNats[0][1])) * 100}%`, height: "100%", background: "#4a7c59", borderRadius: 3 }} />
+                        <div style={{ width: `${(count / topNats[0][1]) * 100}%`, height: "100%", background: "#4a7c59", borderRadius: 3 }} />
                       </div>
                       <div style={{ fontSize: 12, color: "#666", width: 16, textAlign: "right" }}>{count}</div>
                     </div>
@@ -689,19 +834,16 @@ export default function App() {
                 ))}
             </div>
 
-            {/* Relationship status bar chart */}
             <div style={{ background: "#161616", borderRadius: 4, padding: "14px 16px", marginBottom: 16 }}>
               <div style={secTitle}>Relationship status</div>
               <BarChart data={relStatusData} color="#3a3a5c" />
             </div>
 
-            {/* Gender × Orientation matrix */}
             <div style={{ background: "#161616", borderRadius: 4, padding: "14px 16px", marginBottom: 16 }}>
               <div style={secTitle}>Gender × Orientation</div>
               <MatrixChart connections={data.connections} />
             </div>
 
-            {/* Weekly people talked to */}
             <div style={{ background: "#161616", borderRadius: 4, padding: "14px 16px", marginBottom: 16 }}>
               <div style={secTitle}>Weekly people talked to (last 10 weeks)</div>
               <LineChart points={weeklyPeopleData} />

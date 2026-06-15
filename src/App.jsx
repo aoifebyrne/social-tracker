@@ -289,8 +289,12 @@ function BarChart({ data, color = "#4a7c59" }) {
 }
 
 function LineChart({ points, color = "#c8b89a" }) {
-  if (!points || points.filter(p => p.value > 0).length < 2)
-    return <div style={{ fontSize: 12, color: "#444", padding: "20px 0" }}>Not enough data yet</div>;
+  if (!points || points.filter(p => p.value > 0).length < 1)
+    return <div style={{ fontSize: 12, color: "#444", padding: "20px 0" }}>No data yet</div>;
+  if (points.filter(p => p.value > 0).length < 2) {
+    const pt = points.find(p => p.value > 0);
+    return <div style={{ fontSize: 13, color: "#aaa", padding: "12px 0" }}>{pt.label}: {pt.value} people</div>;
+  }
   const max = Math.max(...points.map(p => p.value), 1);
   const w = 300, h = 80, pad = 20;
   const xs = points.map((_, i) => pad + (i / (points.length - 1)) * (w - pad * 2));
@@ -508,6 +512,8 @@ export default function App() {
   })();
 
   const irishCount = data.connections.filter(c => c.nationality === "Irish" || c.nationality === "London Irish").length;
+  const singleStraightMen = data.connections.filter(c => c.gender === "Man" && c.orientation === "Straight" && c.relationshipStatus === "Single").length;
+  const singleQueerWomen = data.connections.filter(c => c.gender === "Woman" && c.orientation === "Queer" && c.relationshipStatus === "Single").length;
   const getEventName = (eventId) => data.dimEvents.find(e => e.id === eventId)?.name || "Unknown event";
   const getOccLabel = (occ) => `${getEventName(occ.eventId)} · ${occ.date}`;
   const getNatFlag = (name) => NATIONALITIES.find(n => n.name === name)?.flag || "";
@@ -814,6 +820,17 @@ export default function App() {
               <div style={{ fontSize: 36, fontWeight: 700, color: "#c8b89a" }}>{irishCount}</div>
               <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
                 🍀 {data.connections.filter(c => c.nationality === "London Irish").length} London Irish · 🇮🇪 {data.connections.filter(c => c.nationality === "Irish").length} Irish
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+              <div style={{ flex: 1, background: "#161616", borderLeft: "3px solid #4a7c59", borderRadius: 4, padding: "14px 16px" }}>
+                <div style={{ fontSize: 10, letterSpacing: 2, color: "#888", textTransform: "uppercase", marginBottom: 4 }}>Single straight men</div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: "#e8e2d9" }}>{singleStraightMen}</div>
+              </div>
+              <div style={{ flex: 1, background: "#161616", borderLeft: "3px solid #7c3a5c", borderRadius: 4, padding: "14px 16px" }}>
+                <div style={{ fontSize: 10, letterSpacing: 2, color: "#888", textTransform: "uppercase", marginBottom: 4 }}>Single queer women</div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: "#e8e2d9" }}>{singleQueerWomen}</div>
               </div>
             </div>
 

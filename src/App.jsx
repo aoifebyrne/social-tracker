@@ -424,6 +424,9 @@ function MapView({ dimEvents, fctOccurrences, connections }) {
 export default function App() {
   const [data, setData] = useState({ dimEvents: [], fctOccurrences: [], connections: [] });
   const [loading, setLoading] = useState(true);
+  const [authed, setAuthed] = useState(false);
+  const [pwInput, setPwInput] = useState("");
+  const [pwError, setPwError] = useState(false);
   const [syncStatus, setSyncStatus] = useState(null);
   const [view, setView] = useState("dashboard");
 
@@ -543,9 +546,37 @@ export default function App() {
     { key: "dashboard", label: "Map", icon: "⬛" },
     { key: "events", label: "Events", icon: "◎" },
     { key: "log", label: "Log", icon: "＋" },
-    { key: "people", label: "People", icon: "◉" },
     { key: "stats", label: "Stats", icon: "◈" },
   ];
+
+  function checkPassword() {
+    if (pwInput === (typeof __APP_PASSWORD__ !== "undefined" ? __APP_PASSWORD__ : "")) {
+      setAuthed(true);
+    } else {
+      setPwError(true);
+      setTimeout(() => setPwError(false), 2000);
+    }
+  }
+
+  if (!authed) return (
+    <div style={{ fontFamily: "Georgia, serif", background: "#0f0f0f", minHeight: "100vh", color: "#e8e2d9", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 20 }}>
+      <div style={{ fontSize: 11, letterSpacing: 4, color: "#888", textTransform: "uppercase" }}>Weekly Practice</div>
+      <div style={{ fontSize: 24, fontWeight: 700 }}>One New Person</div>
+      <div style={{ width: 280 }}>
+        <input
+          type="password"
+          value={pwInput}
+          onChange={e => setPwInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && checkPassword()}
+          placeholder="Password"
+          style={{ ...inp, textAlign: "center", marginBottom: 10, borderColor: pwError ? "#7c1a1a" : "#2a2a2a" }}
+          autoFocus
+        />
+        <button onClick={checkPassword} style={btn(true)}>Enter</button>
+        {pwError && <div style={{ textAlign: "center", color: "#c0392b", fontSize: 12, marginTop: 8 }}>Wrong password</div>}
+      </div>
+    </div>
+  );
 
   if (loading) return (
     <div style={{ fontFamily: "Georgia, serif", background: "#0f0f0f", minHeight: "100vh", color: "#555", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -770,45 +801,6 @@ export default function App() {
             <button onClick={addConnection} disabled={!connForm.name || !connForm.occurrenceId} style={btn(!!(connForm.name && connForm.occurrenceId))}>
               {syncStatus === "saving" ? "Saving…" : syncStatus === "ok" ? "✓ Saved" : "Save connection"}
             </button>
-          </div>
-        )}
-
-        {/* PEOPLE */}
-        {view === "people" && (
-          <div>
-            <div style={secTitle}>Everyone you've met ({data.connections.length})</div>
-            {data.connections.length === 0 && <div style={{ color: "#555", fontSize: 14, textAlign: "center", marginTop: 40 }}>No connections logged yet</div>}
-            {[...data.connections].reverse().map(c => {
-              const occ = data.fctOccurrences.find(o => o.id === c.occurrenceId);
-              return (
-                <div key={c.id} style={{ background: "#161616", borderLeft: "3px solid #4a7c59", borderRadius: 4, padding: "12px 14px", marginBottom: 10 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div onClick={() => setExpandedConn(expandedConn === c.id ? null : c.id)} style={{ cursor: "pointer", flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 15 }}>{c.name}</div>
-                      <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
-                        {occ ? `${getEventName(occ.eventId)} · ${occ.date}` : "Unknown session"}
-                      </div>
-                    </div>
-                    <button onClick={() => deleteConnection(c.id)} style={{ background: "none", border: "none", color: "#333", fontSize: 18, cursor: "pointer", padding: "0 0 0 8px" }}>×</button>
-                  </div>
-                  {expandedConn === c.id && (
-                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #222" }}>
-                      {[
-                        ["Age", c.ageBracket], ["Gender", c.gender], ["Orientation", c.orientation],
-                        ["Relationship", c.relationshipStatus],
-                        ["Nationality", c.nationality ? `${getNatFlag(c.nationality)} ${c.nationality}` : null],
-                        ["Works in tech", c.worksInTech],
-                      ].filter(([, v]) => v && v !== "Unknown" && !v.endsWith("Unknown")).map(([k, v]) => (
-                        <div key={k} style={{ fontSize: 12, color: "#888", marginBottom: 3 }}>
-                          <span style={{ color: "#555", marginRight: 6 }}>{k}:</span>{v}
-                        </div>
-                      ))}
-                      {c.notes && <div style={{ fontSize: 13, color: "#aaa", marginTop: 8, lineHeight: 1.5 }}>{c.notes}</div>}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
           </div>
         )}
 
